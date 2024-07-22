@@ -33,6 +33,18 @@ var userSchema = new mongoose.Schema({
     },
     profilePhoto: {
         type: String
+    },
+    cart: [{
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        quantity: { type: Number, required: true },
+        default: []
+    }],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    address: {
+        country: { type: String },
+        county: { type: String },
+        town: { type: String },
+        building: { type: String }
     }
 }, { timestamps: true });
 
