@@ -1,6 +1,6 @@
-const mongoose = require('mongoose'); // Erase if already required
+const mongoose = require('mongoose');
 
-// Declare the Schema of the Mongo model
+
 var userSchema = new mongoose.Schema({
     firstname: {
         type: String,
@@ -33,20 +33,10 @@ var userSchema = new mongoose.Schema({
     },
     profilePhoto: {
         type: String
-    },
-    cart: [{
-        productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
-        quantity: { type: Number, required: true },
-        default: []
-    }],
-    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
-    address: {
-        country: { type: String },
-        county: { type: String },
-        town: { type: String },
-        building: { type: String }
     }
+
+
 }, { timestamps: true });
 
-//Export the model
+
 module.exports = mongoose.model('Users', userSchema);
