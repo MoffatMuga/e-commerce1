@@ -312,6 +312,78 @@ const userCtrl = {
             console.error('Error deleting review:', error);
             res.status(500).json({ msg: error.message });
         }
+    },
+    addProduct: async (req, res) => {
+        try {
+            const { name, category, description, price, stock } = req.body
+            const newProduct = new Product({
+                name, category, description, price, stock
+            })
+
+            await newProduct.save()
+            res.status(201).json({ msg: 'Product added successfully', newProduct });
+        } catch (error) {
+            console.error('Error adding product:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    getProducts: async (req, res) => {
+        try {
+            const products = await Product.find()
+            res.json(products)
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    getProductById: async (req, res) => {
+        try {
+            const productId = req.params
+            const product = await Product.findById(productId)
+            if (!product) {
+                return res.status(404).json({ msg: 'Product not found' });
+            }
+            res.json(product)
+
+        } catch (error) {
+            console.error('Error fetching product:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    updateProduct: async (req, res) => {
+        try {
+            const productId = req.params
+            const { price, category, name, description, stock } = req.body
+
+            const updatedProduct = await Product.findbByAndUpdate(
+                productId, { price, category, name, description, stock }, { new: true }
+            )
+            if (!updatedProduct) {
+                return res.status(404).json({ msg: 'Product not found' });
+            }
+
+            res.json({ msg: 'Product updated successfully', updatedProduct });
+
+        } catch (error) {
+            console.error('Error updating product:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    deleteProduct: async (req, res) => {
+        try {
+            const productId = req.params
+            const deletedProduct = await Product.findByIdAndDelete(productId)
+
+            if (!deletedProduct) {
+                return res.status(404).json({ msg: 'Product not found' });
+            }
+
+            res.json({ msg: 'Product deleted successfully' });
+
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            res.status(500).json({ msg: error.message });
+        }
     }
 
 }
