@@ -10,7 +10,7 @@ const Product = require('../models/productModel')
 const userCtrl = {
     register: async (req, res) => {
         try {
-            const { email, password, firstname, lastname, mobile } = req.body
+            const { email, password, firstname, lastname, mobile, role } = req.body
 
             if (!email || !password || !firstname || !lastname || !mobile) {
                 return res.status(400).json({ msg: 'please enter all fields' })
@@ -28,7 +28,7 @@ const userCtrl = {
             const passwordHash = await bcrypt.hash(password, 12)
 
             const newUser = new Users({
-                email, lastname, firstname, password: passwordHash, mobile
+                email, lastname, firstname, password: passwordHash, mobile, role: role || 'user'
             })
 
             await newUser.save()
@@ -88,7 +88,7 @@ const userCtrl = {
                 return res.status(400).json({ msg: 'Invalid role' })
             }
 
-            const user = Users.findById(userId)
+            const user = await Users.findById(userId)
             if (!user) {
                 return res.status(400).json({ msg: 'User Not Found' })
             }
@@ -140,14 +140,14 @@ const userCtrl = {
             const { productId, quantity } = req.body
             const userId = req.user.id
 
-            let cartItem = await cartItem.findOne({ productId, quantity })
+            let cartItem = await CartItem.findOne({ productId, quantity })
             if (cartItem) {
                 cartItem.quantity += quantity
             } else {
-                cartItem = new CartTiem({ productId, userId, quantity })
+                cartItem = new CartItem({ productId, userId, quantity })
             }
 
-            await CartItem.save()
+            await cartItem.save()
             res.status(201).json({ msg: 'Product added to cart successfully' });
 
         } catch (error) {
@@ -171,13 +171,25 @@ const userCtrl = {
     },
     getCart: async (req, res) => {
         try {
+
             const userId = req.user.id
 
-            const cartItems = await CartItem.find({ userId }).populate('productId')
+            const cartItems = await CartItem.find({ userId }).populate('items.productId', { strictPopulate: false })
             res.json(cartItems)
 
         } catch (error) {
             console.error('Error getting cart:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    getCartObjectById: async (req, res) => {
+        try {
+            const { productId } = req.params
+
+            const cartItem = await CartItem.findById(productId)
+            res.json(cartItem)
+        } catch (error) {
+            console.error('Error getting Item', error);
             res.status(500).json({ msg: error.message });
         }
     },
