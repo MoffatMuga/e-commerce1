@@ -20,11 +20,13 @@ router.delete('/cart', authMiddleware.verifyUser, userCtrl.removeFromCart)
 //Wishlist Operations
 router.get('/wishlist', authMiddleware.verifyUser, userCtrl.getWishlist)
 router.post('/wishlist', authMiddleware.verifyUser, userCtrl.addToWishlist)
-router.delete('/wishlist', authMiddleware.verifyUser, userCtrl.removeFromWishlist)
+router.delete('/wishlist/:wishlistId', authMiddleware.verifyUser, userCtrl.removeFromWishlist)
+router.put('/wishlist/:wishlist', authMiddleware.verifyUser, userCtrl.updateWishlist)
 
 //Address Operations
 router.get('/address', authMiddleware.verifyUser, userCtrl.getAddress)
-router.put('/address', authMiddleware.verifyUser, userCtrl.updateAddress)
+router.put('/address/:addressId', authMiddleware.verifyUser, userCtrl.updateAddress)
+router.post('/address', authMiddleware.verifyUser, userCtrl.addAddress)
 
 //Reviews
 router.post('/review', authMiddleware.verifyUser, userCtrl.addReview)

@@ -1,4 +1,5 @@
-const Users = require('../models/userModel')
+const mongoose = require('mongoose')
+const User = require('../models/userModel')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const CartItem = require('../models/userCartModel')
@@ -16,7 +17,7 @@ const userCtrl = {
                 return res.status(400).json({ msg: 'please enter all fields' })
             }
 
-            const user = await Users.findOne({ email })
+            const user = await User.findOne({ email })
             if (user) {
                 return res.status(400).json({ msg: 'user already exists' })
             }
@@ -27,7 +28,7 @@ const userCtrl = {
 
             const passwordHash = await bcrypt.hash(password, 12)
 
-            const newUser = new Users({
+            const newUser = new User({
                 email, lastname, firstname, password: passwordHash, mobile, role: role || 'user'
             })
 
@@ -47,7 +48,7 @@ const userCtrl = {
                 return res.status(400).json({ msg: 'all fields are required' })
             }
 
-            const user = await Users.findOne({ email })
+            const user = await User.findOne({ email })
             if (!user) {
                 return res.status(400).json({ msg: 'user does not exist' })
             }
@@ -57,7 +58,7 @@ const userCtrl = {
                 return res.status(400).json({ msg: 'invalid credentials' })
             }
 
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1hr' })
+            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '3hrs' })
             res.json({
                 token,
                 user: {
@@ -74,7 +75,7 @@ const userCtrl = {
     },
     getUsers: async (req, res) => {
         try {
-            const users = await Users.find()
+            const users = await User.find()
             res.json(users)
         } catch (error) {
             console.error('error fetching users', error)
@@ -88,7 +89,7 @@ const userCtrl = {
                 return res.status(400).json({ msg: 'Invalid role' })
             }
 
-            const user = await Users.findById(userId)
+            const user = await User.findById(userId)
             if (!user) {
                 return res.status(400).json({ msg: 'User Not Found' })
             }
@@ -106,7 +107,7 @@ const userCtrl = {
         try {
             const { userId } = req.params
 
-            const user = await Users.findByIdAndDelete(userId)
+            const user = await User.findByIdAndDelete(userId)
             if (!user) {
                 return res.status(404).json({ msg: 'user not found' })
             }
@@ -121,7 +122,7 @@ const userCtrl = {
         try {
             const { firstname, lastname, mobile, profilePhoto } = req.body
 
-            const user = await Users.findById(req.user.id)
+            const user = await User.findById(req.user.id)
 
             if (firstname) user.firstname = firstname
             if (lastname) user.lastname = lastname
@@ -195,12 +196,12 @@ const userCtrl = {
     },
     addToWishlist: async (req, res) => {
         try {
-            const { productId } = req.body
-            const userId = req.user.id
+            const { productId, userId } = req.body
+
 
             let wishlistItem = await Wishlist.findOne({ productId, userId })
             if (!wishlistItem) {
-                wishlistItem = new wishlistItem({ productId, userId })
+                wishlistItem = new Wishlist({ productId, userId })
                 await wishlistItem.save()
             }
 
@@ -215,7 +216,7 @@ const userCtrl = {
             const { productId } = req.body
             const userId = req.user.id
 
-            await Wishlist.deleteOne({ productId, userId })
+            await Wishlist.findOneAndDelete({ productId, userId })
             res.json({ msg: 'Product removed from wishlist successfully' });
         } catch (error) {
             console.error('Error removing from wishlist:', error);
@@ -224,31 +225,66 @@ const userCtrl = {
     },
     getWishlist: async (req, res) => {
         try {
-            const user = await Users.findById(req.user.id).populate('wishlist')
-            res.json(user.wishlist)
+            const userId = req.user.id
+            console.log(`Fetching wishlist for userId: ${userId}`);
+            const wishlistItem = await Wishlist.find({ userId: userId })
+                //.populate('userId', 'lastname email') // Populate user details
+                .populate('productId', 'name price'); // Populate product details
+            console.log(`Wishlist items found: ${wishlistItem.length}`);
+            res.json(wishlistItem)
         } catch (error) {
             console.error('Error getting wishlist:', error);
             res.status(500).json({ msg: error.message });
         }
     },
-    updateAddress: async (req, res) => {
+    updateWishlist: async (req, res) => {
         try {
-            const { country, county, town, building } = req.body
-            const userId = req.user.id
+            const wishlistId = req.params.wishlistId
+            const updates = req.body
 
-            let address = await Address.findOne({ userId })
-            if (address) {
-                address.country = country;
-                address.county = county;
-                address.town = town;
-                address.building = building;
+            const updatedWishlist = await Wishlist.findByIdAndUpdate(wishlistId, updates, { new: true })
 
-            } else {
-                address = new Address({ userId, country, county, town, building })
+            if (!updatedWishlist) {
+                return res.status(404).json({ msg: 'Wishlist item not found' });
             }
 
-            await address.save()
-            res.json({ msg: 'Address updated successfully' });
+            res.json({ msg: 'Wishlist item updated successfully', updatedWishlist });
+        } catch (error) {
+            console.error('Error updating wishlist item:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    addAddress: async (req, res) => {
+        try {
+            const userId = req.user.id
+            const { country, county, town, building } = req.body
+
+            const newAddress = new Address({
+                userId,
+                country,
+                county,
+                town,
+                building
+            })
+
+            await newAddress.save()
+            res.status(201).json({ msg: 'Address added successfully', newAddress });
+        } catch (error) {
+            console.error('Error adding address:', error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+    updateAddress: async (req, res) => {
+        try {
+            const addressId = req.params.addressId
+            const updates = req.body
+
+            const updatedAddress = await Address.findByIdAndUpdate(addressId, updates, { new: true })
+            if (!updatedAddress) {
+                return res.status(404).json({ msg: 'Address not found' });
+            }
+
+            res.json({ msg: 'Address updated successfully', updatedAddress });
         } catch (error) {
             console.error('Error updating address:', error);
             res.status(500).json({ msg: error.message });
@@ -258,8 +294,8 @@ const userCtrl = {
     getAddress: async (req, res) => {
         try {
             const userId = req.user.id
-            const address = await Address.findOne({ userId })
-            res.json(address)
+            const address = await Address.find({ userId })
+            res.json({ address })
         } catch (error) {
             console.error('error fetchig address', error)
             return res.status(500).json({ msg: error.msg })
@@ -267,13 +303,14 @@ const userCtrl = {
     },
     getReviews: async (req, res) => {
         try {
-            const { productId } = req.body
+            const { productId } = req.params;
+            console.log(`Fetching reviews for productId: ${productId}`);
 
-            const reviews = await Review.find({ productId }).populate('user', 'name')
-            res.json(reviews)
-
+            const reviews = await Review.find({ productId }).populate('userId', 'firstname lastname');
+            console.log(`Reviews found: ${reviews.length}`);
+            res.json(reviews);
         } catch (error) {
-            console.error('Error fetching reviews:', error);
+            console.error('Error getting reviews:', error);
             res.status(500).json({ msg: error.message });
         }
     },
@@ -350,7 +387,7 @@ const userCtrl = {
     },
     getProductById: async (req, res) => {
         try {
-            const productId = req.params
+            const productId = req.params.productId
             const product = await Product.findById(productId)
             if (!product) {
                 return res.status(404).json({ msg: 'Product not found' });
@@ -364,14 +401,15 @@ const userCtrl = {
     },
     updateProduct: async (req, res) => {
         try {
-            const productId = req.params
-            const { price, category, name, description, stock } = req.body
+            const productId = req.params.productId
+            //const { price, category, name, description, stock } = req.body
 
-            const updatedProduct = await Product.findbByAndUpdate(
-                productId, { price, category, name, description, stock }, { new: true }
+            const updatedProduct = await Product.findByIdAndUpdate(
+                productId, req.body, { new: true }
+
             )
             if (!updatedProduct) {
-                return res.status(404).json({ msg: 'Product not found' });
+                return res.status(404).json({ msg: 'Product not found for ID: ' + productId });
             }
 
             res.json({ msg: 'Product updated successfully', updatedProduct });
@@ -383,7 +421,8 @@ const userCtrl = {
     },
     deleteProduct: async (req, res) => {
         try {
-            const productId = req.params
+            const productId = req.params.productId
+
             const deletedProduct = await Product.findByIdAndDelete(productId)
 
             if (!deletedProduct) {
