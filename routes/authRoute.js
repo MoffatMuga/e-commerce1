@@ -21,7 +21,7 @@ router.delete('/cart', authMiddleware.verifyUser, userCtrl.removeFromCart)
 router.get('/wishlist', authMiddleware.verifyUser, userCtrl.getWishlist)
 router.post('/wishlist', authMiddleware.verifyUser, userCtrl.addToWishlist)
 router.delete('/wishlist/:wishlistId', authMiddleware.verifyUser, userCtrl.removeFromWishlist)
-router.put('/wishlist/:wishlist', authMiddleware.verifyUser, userCtrl.updateWishlist)
+
 
 //Address Operations
 router.get('/address', authMiddleware.verifyUser, userCtrl.getAddress)
