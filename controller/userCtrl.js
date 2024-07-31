@@ -11,9 +11,9 @@ const Product = require('../models/productModel')
 const userCtrl = {
     register: async (req, res) => {
         try {
-            const { email, password, firstname, lastname, mobile, role } = req.body
+            const { email, password, firstName, lastName, mobile, role } = req.body
 
-            if (!email || !password || !firstname || !lastname || !mobile) {
+            if (!email || !password || !firstName || !lastName || !mobile) {
                 return res.status(400).json({ msg: 'please enter all fields' })
             }
 
@@ -29,7 +29,7 @@ const userCtrl = {
             const passwordHash = await bcrypt.hash(password, 12)
 
             const newUser = new User({
-                email, lastname, firstname, password: passwordHash, mobile, role: role || 'user'
+                email, lastName, firstName, password: passwordHash, mobile, role: role || 'user'
             })
 
             await newUser.save()
@@ -63,8 +63,8 @@ const userCtrl = {
                 token,
                 user: {
                     id: user._id,
-                    firstname: user.firstname,
-                    lastname: user.lastname,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
                     mobile: user.mobile
                 }
             })

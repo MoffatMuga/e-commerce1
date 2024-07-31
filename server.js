@@ -1,4 +1,5 @@
 const express = require('express')
+const cors = require('cors')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const { notFound, errorHandler } = require('./middlewares/errorHandler')
@@ -7,15 +8,19 @@ require('dotenv').config()
 const authRouter = require('./routes/authRoute')
 
 
-const PORT = process.env.PORT || 8000
+
+const PORT =  8000
 
 const URI = process.env.MONGO_URL
 
 
+
+
+app.use(cors());
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-app.use('/User', authRouter)
+app.use('/api', authRouter)
 app.use(notFound)
 app.use(errorHandler)
 
